@@ -1,0 +1,68 @@
+* Normal forms
+
+** 1st normal form
+
+- Each cell to be single values
+- Entries in a column are same type
+- Rows uniquely identified:
+  + Add unique ID
+  + Or add more columns to make unique
+
+** 2nd normal form
+
+- All attributes (non-key columns) depend on the key.
+
+** 3rd normal form
+
+- All fields (columns) can be determined Only by the Key in the table an no other columns
+
+** 4rd normal form
+   
+- No multi-valued dependencies
+
+* TP2
+  
+** Master 1
+
+| *Attribute* | *Description*                    |
+|-------------+----------------------------------|
+| NV          | Wine number                      |
+| CRU         | Vineyard or group of vineyards   |
+| DEGRE       | Alcohol content                  |
+| MILL        | Vintage year                     |
+| QTE         | Number of bottles harvested      |
+| NP          | Producer number                  |
+| NOM         | Producer's last name             |
+| PRENOM      | Producer's first name            |
+| REGION      | Production region                |
+
+This table is in First Normal Form. Let's make it second normal form.
+
+*** Functional dependency analysis
+
+{NV} -> {CRU, DEGRE, MILL}
+{NP} -> {NOM, PRENOM, REGION}
+{NV, NP} -> {QTE}
+
+** Master 2
+
+| *Attribute* | *Description*                                          |
+|-------------+--------------------------------------------------------|
+| NV          | Wine number                                            |
+| CRU         | Vineyard or group of vineyards                         |
+| DEGRE       | Alcohol content                                        |
+| MILL        | Vintage year                                           |
+| DATES       | Buying date                                            |
+| LIEU        | Place where the wine was sold                          |
+| QTE         | Number of bottles bought                               |
+| NB          | Client (buveur) number                                 |
+| NOM         | Client's last name                                     |
+| PRENOM      | Client's first name                                    |
+| TYPE        | Type of client by volume of purchases                  |
+| REGION      | Administrative Region (different to production region) |
+
+*** Functional dependency analysis
+
+{NV} -> {CRU, DEGRE, MILL}
+{NB} -> {NOM, PRENOM, REGION, TYPE}
+{NV, NB} -> {QTE, LIEU}

@@ -1,0 +1,215 @@
+#+TITLE: Functional Dependencies
+#+SUBTITLE: INF725 - Lesson 2
+#+DATE: 1 October 2018
+#+INCLUDE: "../print/doctype-memo.org"
+{{{subtitle(Intro to databases)}}}
+{{{theme-color(0060c1)}}}
+
+* Introduction
+
+* Example
+  
+Bellow is the data shows for ~MOVIES(Title, Year, Length, Genre, StudioName, StarName)
+
+#+CAPTION: Movies table
+#+NAME: Movies
+| TITLE              | YEAR | LENGTH | GENRE  | STUDIONAME | STARNAME       |
+|--------------------+------+--------+--------+------------+----------------|
+| Starwars           | 1977 |    124 | sci-fi | Fox        | Carrie Fischer |
+| Starwars           | 1977 |    124 | sci-fi | Fox        | Mark Hamil     |
+| Starwars           | 1977 |    124 | sci-fi | Fox        | Harrison ford  |
+| Gone with the wind | 1939 |    231 | Drama  | MGM        | Vivian Leigh   |
+| Wayne's world      | 1992 |     95 | Comedy | Paramount  | Dane Carvey    |
+| Wayne's world      | 1992 |     95 | Comedy | Paramount  | Milke Meyers   |
+
+Extra tables could be defined as follows:
+
+#+BEGIN_SRC sql
+  COSTUMERS(ID, NAME, ADDRESS, TELEPHONE, CITY, COUNTRY, EMAIL, TYPE)
+  PROVIDERS
+  PRODUCTS(ID, NAME, ...)
+  ORDERS(ID, CUSTOMER_ID, ...)
+  ORDER_TRANSACTIONS(ORDER_ID, PRODUCT_ID, QUANTITY, PRICE)
+#+END_SRC
+
+Imagine that we wish to split Table [[Movies]] into two tables. If we do not account for a column in our second table that will match one in the first and link its rows with the first, we will not be able to reconstruct Table [[Movies]]. Bellow, ~MOVIES1~ and ~MOVIES2~ cannot be used to reconstruct the original table. However, ~MOVIES3~ and ~MOVIES4~ can be used to reconstruct the original table. Indeed, ~MOVIES3~ and ~MOVIES4~ both include the ~TITLE~ column allowing to "stitch" both table together:
+
+#+BEGIN_SRC sql
+  MOVIES1(TITLE, YEAR, LENGTH)
+  MOVIES2(GENRE, STUDIONAME, STARNAME)
+#+END_SRC
+
+#+BEGIN_SRC sql
+  MOVIES3(TITLE, YEAR, LENGTH)
+  MOVIES4(TITLE, GENRE, STUDIONAME, STARNAME)
+#+END_SRC
+
+** Keys
+
+- Uniqueness: the values of the attributes uniquely identifies a tuple
+- Minimality: no proper subset of the attributes has the uniqueness property
+
+** Superkey
+   
+*N.B.* A /key/ is a _minimal_ /superkey/.
+
+- Uniqueness
+- It's essentially a key with additional attributes
+
+Example with our Movies table:
+
+#+BEGIN_SRC sql
+  {Title, year, starname} ==> Key
+  {title, year, starname, genre} ==> Superkey
+#+END_SRC
+
+#+BEGIN_QUOTE
+"A Super Key is simply a non-minimal Candidate Key, that is to say one with additional columns not strictly required to ensure uniqueness of the row.
+
+A Primary Key is a minimal Candidate Key, which is to say all constituent columns are strictly required in order to ensure uniqueness."
+
+---- [[https://dba.stackexchange.com/questions/71924/what-is-the-difference-between-primary-key-and-super-key-in-dbms][Source]]
+#+END_QUOTE
+
+** Functional dependencies
+
+#+BEGIN_LATEX latex
+\begin{align*}
+A \rightarrow B
+\end{align*}
+#+END_LATEX
+
+1. When values of B can be derived from A we say that B is *functionally dependent* on A
+2. Given a value of A there is only on value for B
+3. Whenever two tuples agree on A, then they agree on B
+   
+#+BEGIN_LATEX latex
+\begin{align*}
+TITLE, YEAR \rightarrow LENGTH   & \Longrightarrow \mbox{Functional dependency} \\
+TITLE, YEAR \rightarrow STARNAME & \Longrightarrow \mbox{Not a functional dependency}
+\end{align*}
+#+END_LATEX
+
+*** Properties
+The following properties of /functional dependencies/ are knows as [[https://en.wikipedia.org/wiki/Armstrong%27s_axioms][Armstrong's axioms]]:
+
+1. Transitivity: $A \rightarrow B && B \rightarrow C \Longrightarrow A \rightarrow C$
+2. Augmentation: $A \rightarrow B \Longrightarrow AC \rightarrow BC$
+3. Reflexivity: $Y \subseteq X \Longrightarrow X \rightarrow Y$
+
+/E.g./ Union: prove that $X \rightarrow Y && X \rightarrow Z \Longrightarrow X \rightarrow YZ$:
+
+#+BEGIN_LATEX latex
+\begin{align*}
+X  & \rightarrow XX \rightarrow XY \\
+XY & \rightarrow YZ
+\end{align*}
+#+END_LATEX
+
+/E.g./ Decomposition: prove that $X \rightarrow Y && Z \subseteq Y \Longrightarrow X \rightarrow Z$:
+
+#+BEGIN_LATEX latex
+\begin{align*}
+X & \rightarrow Y \\
+Y & \rightarrow Z
+\end{align*}
+#+END_LATEX
+
+/E.g./ Pseudo-transitivity: prove that $X \rightarrow Y && YW \rightarrow Z \Longrightarrow XW \rightarrow Z$:
+
+#+BEGIN_LATEX latex
+\begin{align*}
+XW & \rightarrow YW \\
+YW & \rightarrow Z
+\end{align*}
+#+END_LATEX
+
+/E.g./ Prove that $A \rightarrow B && C \rightarrow D \Longrightarrow AC \rightarrow BD$:
+
+#+BEGIN_LATEX latex
+\begin{align*}
+& AC  \rightarrow BC \\
+& BC  \rightarrow BD
+\end{align*}
+#+END_LATEX
+
+** Closures
+   
+Given $R$, $\bar{A}$ and $S$ (set of FD's), let $\bar{A}^+$ be the closure of $\bar{A}$ under $S$ is the set of attributes $B$ such that $\bar{A} \rightarrow B$.
+
+*** Closure of attributes
+    
+Closure of attributes can be computed as follows:
+
+#+begin_example
+START with X = A_bar:
+  REPEAT until there is no change:
+    IF B -> C
+      AND B ⊆ X:
+        ADD C to X
+RETURN X AS X+ // where X+ is the closure of X
+#+end_example
+
+/E.g./ For the following relation, R = (NAME, COLOR, CATEGORY, DEPARTMENT, PRICE) we have:
+
+1. NAME -> COLOR
+2. CATEGORY -> DEPARTMENT
+3. COLOR, CATEGORY -> PRICE
+
+*Clojure of NAME:*
+
+#+begin_example
+X = {NAME}
+  NAME -> COLOR
+X = {NAME, COLOR}
+#+end_example
+
+*Clojure of {NAME, CATEGORY}:*
+
+#+begin_example
+X = {NAME, CATEGORY}
+  NAME -> COLOR
+X = {NAME, CATEGORY, COLOR}
+  CATEGORY -> DEPARTMENT
+X = {NAME, CATEGORY, COLOR, DEPARTMENT}
+  COLOR, CATEGORY -> PRICE
+X = {NAME, CATEGORY, COLOR, DEPARTMENT, PRICE}
+#+end_example
+
+*Clojure of a superkey:* => all attributes in the relation
+
+Let R be the relation R(A, B, C, D, E, F), find $\{A, B\}^+$, the closure of $A$ and $B$ under $R$, along with $\{A, F\}^+$:
+
+#+BEGIN_LATEX latex
+\begin{align*}
+\{A, B\}^+ & = \{A, B, C, D, E\} \\
+\{A, F\}^+ & = \{A, F, B, C, D, E\} \\
+\{A\}^+ & = A \\
+\{F\}^+ & = F
+\end{align*}
+#+END_LATEX
+
+Therefore, $\{A, F\}$ is a /superkey/ but $\{A, B\}$ is not.
+
+** Normal Forms 
+
+*** Second normal form (2NF)
+    
+[[https://en.wikipedia.org/wiki/Second_normal_form][Wikipedia]]
+
+*** Third normal form (3NF)
+    
+[[https://en.wikipedia.org/wiki/Third_normal_form][Wikipedia]]
+
+*** Boyce-Codd normal form (3NF)
+    
+[[https://en.wikipedia.org/wiki/Boyce%E2%80%93Codd_normal_form][Wikipedia]]
+
+
+
+
+
+
+
+
+
